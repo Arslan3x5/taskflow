@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_http_methods
 
@@ -48,6 +49,11 @@ def apply_fields(task, data):
         if not title or len(title) > 140:
             return "Title must be 1-140 characters."
         task.title = title
+    if "status" in data:
+        if data["status"] not in Task.Status.values:
+            return "Invalid status."
+        task.status = data["status"]
+        task.completed_at = timezone.now() if data["status"] == "done" else None
     if "priority" in data:
         if data["priority"] not in Task.Priority.values:
             return "Invalid priority."
@@ -55,6 +61,7 @@ def apply_fields(task, data):
     if "due_date" in data:
         task.due_date = parse_date(data["due_date"]) if data["due_date"] else None
     return None
+
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -70,3 +77,20 @@ def task_list(request):
         return JsonResponse({"error": error or "Title is required."}, status=400)
     task.save()
     return JsonResponse(serialize(task), status=201)
+
+
+@login_required
+@require_http_methods(["PATCH", "DELETE"])
+def task_detail(request, pk):
+    task = request.user.tasks.filter(pk=pk).first()
+    if not task:
+        return JsonResponse({"error": "Not found."}, status=404)
+    if request.method == "DELETE":
+        task.delete()
+        return JsonResponse({}, status=204)
+    data = read_json(request)
+    error = apply_fields(task, data) if data is not None else "Invalid JSON."
+    if error:
+        return JsonResponse({"error": error}, status=400)
+    task.save()
+    return JsonResponse(serialize(task))
