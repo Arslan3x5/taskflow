@@ -55,3 +55,18 @@ def apply_fields(task, data):
     if "due_date" in data:
         task.due_date = parse_date(data["due_date"]) if data["due_date"] else None
     return None
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def task_list(request):
+    if request.method == "GET":
+        return JsonResponse({"tasks": [serialize(t) for t in request.user.tasks.all()]})
+    data = read_json(request)
+    if data is None:
+        return JsonResponse({"error": "Invalid JSON."}, status=400)
+    task = Task(owner=request.user)
+    error = apply_fields(task, data)
+    if error or not task.title:
+        return JsonResponse({"error": error or "Title is required."}, status=400)
+    task.save()
+    return JsonResponse(serialize(task), status=201)
