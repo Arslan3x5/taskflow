@@ -1,0 +1,13 @@
+{% extends "tasks/base.html" %}
+{% block title %}Create account · TaskFlow{% endblock %}
+{% block body %}
+<main class="auth">
+  <h1>Start your board</h1>
+  <p style="color:var(--muted);margin:0">Free account. Takes a minute.</p>
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit">Create account</button>
+  </form>
+  <p><a href="{% url 'login' %}">I already have an account</a></p>
+</main>
+{% endblock %}
