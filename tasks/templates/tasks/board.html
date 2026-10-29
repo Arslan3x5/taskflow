@@ -14,8 +14,12 @@ main{padding:1.5rem clamp(1rem,4vw,2.5rem);max-width:1200px;margin:auto}
 .card.high{border-left-color:var(--high)}
 .card.medium{border-left-color:#b7791f}
 .card.low{border-left-color:var(--accent)}
+.meta{display:flex;align-items:center;gap:.4rem;font-size:.82rem;color:var(--muted)}
+.meta .late{color:var(--high);font-weight:600}
+.meta .sp{flex:1}
+.meta button{background:none;border:0;color:var(--muted);cursor:pointer;padding:.15rem .4rem;border-radius:6px}
+.meta button:hover{background:var(--bg);color:var(--ink)}
 .card p{margin:0 0 .4rem;overflow-wrap:anywhere}
-.meta{display:flex;gap:.6rem;font-size:.82rem;color:var(--muted)}
 .empty{color:var(--muted);font-size:.9rem;padding:.4rem .2rem}
 #err{color:var(--high);min-height:1.4em;margin-bottom:.6rem}
 .add{display:grid;grid-template-columns:1fr 130px 150px auto;gap:.6rem;margin-bottom:1rem}
@@ -82,14 +86,18 @@ function esc(text) {
 
 function draw() {
   const today = new Date().toISOString().slice(0, 10);
-  $("#cols").innerHTML = COLS.map(([key, label]) => {
+    $("#cols").innerHTML = COLS.map(([key, label], i) => {
     const items = tasks.filter(t => t.status === key);
     const cards = items.map(t => `
       <article class="card ${t.priority}" data-id="${t.id}">
         <p>${esc(t.title)}</p>
-        <div class="meta">
+                <div class="meta">
           <span>${t.priority}</span>
-          ${t.due_date ? `<span>${t.due_date}</span>` : ""}
+          ${t.due_date ? `<span class="${t.due_date < today && key !== "done" ? "late" : ""}">${t.due_date}</span>` : ""}
+          <span class="sp"></span>
+          ${i > 0 ? `<button data-move="${COLS[i-1][0]}" aria-label="Move to ${COLS[i-1][1]}">←</button>` : ""}
+          ${i < 2 ? `<button data-move="${COLS[i+1][0]}" aria-label="Move to ${COLS[i+1][1]}">→</button>` : ""}
+          <button data-del aria-label="Delete task">✕</button>
         </div>
       </article>`).join("");
     return `<section class="col" data-status="${key}">
@@ -105,6 +113,21 @@ $("#add").addEventListener("submit", async e => {
   try {
     await api("/api/tasks/", "POST", Object.fromEntries(new FormData(e.target)));
     e.target.reset();
+    await load();
+  } catch (err) {
+    $("#err").textContent = err.message;
+  }
+});
+
+$("#cols").addEventListener("click", async e => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  $("#err").textContent = "";
+  try {
+    const url = `/api/tasks/${card.dataset.id}/`;
+    if (e.target.dataset.move) await api(url, "PATCH", {status: e.target.dataset.move});
+    else if (e.target.hasAttribute("data-del")) await api(url, "DELETE");
+    else return;
     await load();
   } catch (err) {
     $("#err").textContent = err.message;
