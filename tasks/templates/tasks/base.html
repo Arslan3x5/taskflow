@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <title>{% block title %}TaskFlow{% endblock %}</title>
 <style>
 :root{--bg:#f3f5f2;--surface:#fff;--ink:#17211d;--muted:#5d6b65;--line:#dbe1dc;--accent:#1f6f5c;--accent-ink:#fff;--high:#c2410c}
-@media (prefers-color-scheme:dark){:root{--bg:#101614;--surface:#18211e;--ink:#e8efeb;--muted:#93a39b;--line:#2a3733;--accent:#4fb89d;--accent-ink:#06130f;--high:#f08a5d}}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#101614;--surface:#18211e;--ink:#e8efeb;--muted:#93a39b;--line:#2a3733;--accent:#4fb89d;--accent-ink:#06130f;--high:#f08a5d;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#101614;--surface:#18211e;--ink:#e8efeb;--muted:#93a39b;--line:#2a3733;--accent:#4fb89d;--accent-ink:#06130f;--high:#f08a5d;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 a{color:var(--accent)}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-input,button{font:inherit;color:inherit}
+input,select,button{font:inherit;color:inherit}
 input{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem;width:100%}
 .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:.55rem 1rem;font-weight:600;cursor:pointer}
 .btn.ghost{background:none;color:var(--muted);border:1px solid var(--line)}

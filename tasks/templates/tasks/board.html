@@ -3,7 +3,8 @@
 {% block head %}
 <style>
 :root{--doing:#b7791f;--shadow:0 1px 2px rgba(23,33,29,.06),0 6px 18px rgba(23,33,29,.06)}
-@media (prefers-color-scheme:dark){:root{--doing:#e0a93c;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.28)}}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--doing:#e0a93c;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.28)}}
+:root[data-theme=dark]{--doing:#e0a93c;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.28)}
 
 body{min-height:100vh;background:
   radial-gradient(900px 420px at 88% -8%,color-mix(in srgb,var(--accent) 16%,transparent),transparent),
@@ -14,9 +15,10 @@ body{min-height:100vh;background:
 header{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem clamp(1rem,4vw,2.5rem);border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--surface) 78%,transparent);backdrop-filter:blur(12px)}
 header b{display:flex;align-items:center;gap:.55rem;font-size:1.2rem;letter-spacing:-.03em}
 header b::before{content:"";width:.85rem;height:.85rem;border-radius:4px;transform:rotate(45deg);background:linear-gradient(135deg,var(--accent),var(--doing))}
-header form{display:flex;align-items:center;gap:.8rem}
+header form{display:flex;align-items:center;gap:.7rem}
 .who{display:flex;align-items:center;gap:.5rem;color:var(--muted);font-size:.92rem}
 .who i{display:grid;place-items:center;width:1.9rem;height:1.9rem;border-radius:50%;font-style:normal;font-weight:700;font-size:.85rem;background:var(--accent);color:var(--accent-ink)}
+.icon{padding:.5rem .7rem;line-height:1;font-size:1rem}
 
 main{max-width:1200px;margin:auto;padding:1.75rem clamp(1rem,4vw,2.5rem) 3rem}
 .hello h1{margin:0;font-size:clamp(1.6rem,3vw,2.1rem);letter-spacing:-.03em}
@@ -87,6 +89,7 @@ input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 
   <b>TaskFlow</b>
   <form method="post" action="{% url 'logout' %}">{% csrf_token %}
     <div class="who"><i>{{ request.user.username|slice:":1"|upper }}</i><span>{{ request.user.username }}</span></div>
+    <button class="btn ghost icon" type="button" id="theme" aria-label="Switch between light and dark mode">🌙</button>
     <button class="btn ghost" type="submit">Log out</button>
   </form>
 </header>
@@ -176,8 +179,9 @@ function drawStats() {
 
   const h = new Date().getHours();
   $("#greeting").textContent = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  const open = total - done;
   $("#sub").textContent = total
-    ? `${total - done} open ${total - done === 1 ? "task" : "tasks"}${overdue ? `, ${overdue} overdue` : ""}.`
+    ? `${open} open ${open === 1 ? "task" : "tasks"}${overdue ? `, ${overdue} overdue` : ""}.`
     : "A clean slate. Add your first task below.";
 }
 
@@ -274,6 +278,21 @@ colsEl.addEventListener("drop", async e => {
   }
   dragId = null;
 });
+
+/* Light / dark toggle */
+const root = document.documentElement;
+const isDark = () => root.dataset.theme
+  ? root.dataset.theme === "dark"
+  : matchMedia("(prefers-color-scheme: dark)").matches;
+const themeIcon = () => $("#theme").textContent = isDark() ? "☀️" : "🌙";
+
+$("#theme").addEventListener("click", () => {
+  const next = isDark() ? "light" : "dark";
+  root.dataset.theme = next;
+  try { localStorage.setItem("theme", next); } catch (e) {}
+  themeIcon();
+});
+themeIcon();
 
 load();
 </script>
