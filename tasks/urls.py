@@ -10,4 +10,5 @@ urlpatterns = [
     path("register/", views.register, name="register"),
     path("api/tasks/", views.task_list, name="task_list"),
     path("api/tasks/<int:pk>/", views.task_detail, name="task_detail"),
+    path("api/stats/", views.stats, name="stats"),
 ]

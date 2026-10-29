@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
@@ -94,3 +95,17 @@ def task_detail(request, pk):
         return JsonResponse({"error": error}, status=400)
     task.save()
     return JsonResponse(serialize(task))
+
+@login_required
+def stats(request):
+    qs = request.user.tasks.all()
+    today = timezone.localdate()
+    week_ago = timezone.now() - timedelta(days=7)
+    return JsonResponse({
+        "total": qs.count(),
+        "todo": qs.filter(status="todo").count(),
+        "doing": qs.filter(status="doing").count(),
+        "done": qs.filter(status="done").count(),
+        "overdue": qs.exclude(status="done").filter(due_date__lt=today).count(),
+        "done_this_week": qs.filter(status="done", completed_at__gte=week_ago).count(),
+    })
