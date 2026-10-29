@@ -24,6 +24,9 @@ main{padding:1.5rem clamp(1rem,4vw,2.5rem);max-width:1200px;margin:auto}
 #err{color:var(--high);min-height:1.4em;margin-bottom:.6rem}
 .add{display:grid;grid-template-columns:1fr 130px 150px auto;gap:.6rem;margin-bottom:1rem}
 select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem;width:100%;font:inherit;color:inherit}
+.card{cursor:grab}
+.card.dragging{opacity:.4}
+.col.over{border-color:var(--accent);background:var(--surface)}
 @media (max-width:820px){.cols{grid-template-columns:1fr}.add{grid-template-columns:1fr 1fr}.add input:first-child{grid-column:1/-1}}</style>
 {% endblock %}
 {% block body %}
@@ -89,7 +92,7 @@ function draw() {
     $("#cols").innerHTML = COLS.map(([key, label], i) => {
     const items = tasks.filter(t => t.status === key);
     const cards = items.map(t => `
-      <article class="card ${t.priority}" data-id="${t.id}">
+          <article class="card ${t.priority}" data-id="${t.id}" draggable="true">
         <p>${esc(t.title)}</p>
                 <div class="meta">
           <span>${t.priority}</span>
@@ -132,6 +135,46 @@ $("#cols").addEventListener("click", async e => {
   } catch (err) {
     $("#err").textContent = err.message;
   }
+});
+
+let dragId = null;
+const colsEl = $("#cols");
+
+colsEl.addEventListener("dragstart", e => {
+  const card = e.target.closest(".card");
+  if (!card) return;
+  dragId = card.dataset.id;
+  card.classList.add("dragging");
+});
+
+colsEl.addEventListener("dragend", () => {
+  document.querySelectorAll(".dragging, .over").forEach(el => el.classList.remove("dragging", "over"));
+});
+
+colsEl.addEventListener("dragover", e => {
+  const col = e.target.closest(".col");
+  if (col) {
+    e.preventDefault();
+    col.classList.add("over");
+  }
+});
+
+colsEl.addEventListener("dragleave", e => {
+  const col = e.target.closest(".col");
+  if (col && !col.contains(e.relatedTarget)) col.classList.remove("over");
+});
+
+colsEl.addEventListener("drop", async e => {
+  const col = e.target.closest(".col");
+  if (!col || !dragId) return;
+  e.preventDefault();
+  try {
+    await api(`/api/tasks/${dragId}/`, "PATCH", {status: col.dataset.status});
+    await load();
+  } catch (err) {
+    $("#err").textContent = err.message;
+  }
+  dragId = null;
 });
 
 load();
